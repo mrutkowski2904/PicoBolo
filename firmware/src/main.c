@@ -1,15 +1,13 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "pico/multicore.h"
-#include "pico/cyw43_arch.h"
 #include "hardware/watchdog.h"
 
-#include "config.h"
+#include "main.h"
 #include "network.h"
 
-static void core0_init(void);
-static void core1_init(void);
-static void core1_entry(void);
+static void init(void);
+static void network_rx_callback(const ip_addr_t *addr, uint16_t port, void *data, uint16_t len);
 
 /*
  * Core 0 entry
@@ -17,7 +15,7 @@ static void core1_entry(void);
  */
 int main()
 {
-    core0_init();
+    init();
 
     while (1)
     {
@@ -26,36 +24,27 @@ int main()
     }
 }
 
-/*
- * Core 1 entry
- * Controls robot movement
- */
-static void core1_entry(void)
+static void network_rx_callback(const ip_addr_t *addr, uint16_t port, void *data, uint16_t len)
 {
-    core1_init();
-
-    while (1)
+    static char buff[128] = {0};
+    if (len < (128 - 3))
     {
-        __wfi();
+        memcpy(buff, data, len);
+        buff[len] = '\r';
+        buff[len + 1] = '\n';
+        buff[len + 2] = '\0';
+        printf(buff);
     }
 }
 
-static void core0_init(void)
+static void init(void)
 {
     stdio_init_all();
-
-    if (watchdog_caused_reboot())
-    {
-        printf("Rebooted by watchdog\n");
-    }
-    watchdog_enable(1000, 1);
+    watchdog_enable(2000, 1);
 
     network_init();
+    network_rx_register_cb(network_rx_callback);
 
     multicore_reset_core1();
     multicore_launch_core1(core1_entry);
-}
-
-static void core1_init(void)
-{
 }

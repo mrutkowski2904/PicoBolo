@@ -1,4 +1,4 @@
-add_executable(robot-fw main.c )
+add_executable(robot-fw main.c core1.c)
 
 pico_set_program_name(robot-fw "robot-fw")
 pico_set_program_version(robot-fw "0.1")
