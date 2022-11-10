@@ -1,3 +1,4 @@
 build/*
 !build/.gitkeep
 .vscode/.cortex-debug*
+src/network/secret.h
